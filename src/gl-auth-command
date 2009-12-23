@@ -28,6 +28,7 @@ our ($GL_LOGT, $GL_CONF_COMPILED, $REPO_BASE, $GIT_PATH, $REPO_UMASK, $GL_ADMIND
 # and these are set by gitolite.pm
 our ($R_COMMANDS, $W_COMMANDS, $REPONAME_PATT);
 our %repos;
+our %external;
 
 # the common setup module is in the same directory as this running program is
 my $bindir = $0;
@@ -63,6 +64,12 @@ if ($ARGV[0] eq '-s') {
 
 # first, fix the biggest gripe I have with gitosis, a 1-line change
 my $user=$ENV{GL_USER}=shift;       # there; now that's available everywhere!
+
+# parse the compiled acl; goes into %repos and %external (global)
+&parse_acl($GL_CONF_COMPILED);
+
+# mapped user
+$user=$ENV{GL_USER}= ( $external{$user} || $user );
 
 # ----------------------------------------------------------------------------
 #       sanity checks on SSH_ORIGINAL_COMMAND
@@ -107,9 +114,6 @@ unless ( $verb and ( $verb =~ $R_COMMANDS or $verb =~ $W_COMMANDS ) and $repo an
 # ----------------------------------------------------------------------------
 #       first level permissions check
 # ----------------------------------------------------------------------------
-
-# parse the compiled acl; goes into %repos (global)
-&parse_acl($GL_CONF_COMPILED);
 
 # we know the user and repo; we just need to know what perm he's trying
 my $perm = ($verb =~ $R_COMMANDS ? 'R' : 'W');

@@ -109,6 +109,10 @@ my %repo_config = ();
 my %desc = ();
 my %owner = ();
 
+# internal and external names
+my %internal = ();
+my %external = ();
+
 # set the umask before creating any files
 umask($REPO_UMASK);
 
@@ -171,6 +175,34 @@ sub parse_conf_file
         s/\s*#.*//;
         # and blank lines
         next unless /\S/;
+
+        # useralias statements
+        if (/^useralias (\S+) = (.+)/)
+        {
+            die "useralias not allowed in fragment\n" unless $fragment eq 'master';
+            my $intname = $1;
+            my @extnames; @extnames = split(' ', $2);
+
+            if ($external{$intname}) {
+                print STDERR "WARNING: $intname already appears on the right side of a useralias\n";
+                next;
+            }
+            $internal{$intname} = 1;
+
+            for my $extname (@extnames) {
+                if ( $internal{$extname} ) {
+                    print STDERR "WARNING: $extname already appears on the left side of a useralias\n";
+                    next;
+                }
+                if ( $external{$extname} and $external{$extname} ne $intname ) {
+                    print STDERR "WARNING: $extname is already aliased to $external{$extname}, can't alias to $intname\n";
+                    next;
+                }
+                $external{$extname} = $intname;
+            }
+
+            next;
+        }
 
         # user or repo groups
         if (/^(@\S+) = (.*)/)
@@ -320,6 +352,7 @@ for my $fragment_file (glob("conf/fragments/*.conf"))
 
 my $compiled_fh = wrap_open( ">", $GL_CONF_COMPILED );
 print $compiled_fh Data::Dumper->Dump([\%repos], [qw(*repos)]);
+print $compiled_fh Data::Dumper->Dump([\%external], [qw(*external)]) if %external;
 close $compiled_fh or die "$ABRT close compiled-conf failed: $!\n";
 
 # ----------------------------------------------------------------------------
@@ -419,6 +452,9 @@ close $projlist_fh;
 #       "compile" ssh authorized_keys
 # ----------------------------------------------------------------------------
 
+wrap_chdir($GL_KEYDIR);
+exit unless glob("*.pub");
+
 my $authkeys_fh = wrap_open( "<", $ENV{HOME} . "/.ssh/authorized_keys",
     "\tFor security reasons, gitolite will not *create* this file if it does\n" .
     "\tnot already exist.  Please see the \"admin\" document for details\n");
@@ -432,7 +468,6 @@ while (<$authkeys_fh>)
 # add our "start" line, each key on its own line (prefixed by command and
 # options, in the standard ssh authorized_keys format), then the "end" line.
 print $newkeys_fh "# gitolite start\n";
-wrap_chdir($GL_KEYDIR);
 for my $pubkey (glob("*"))
 {
     # lint check 1
@@ -445,6 +480,9 @@ for my $pubkey (glob("*"))
     # lint check 2
     print STDERR "WARNING: pubkey $pubkey exists but user $user not in config\n"
         unless $user_list{$user};
+    # lint check 2.5 (the new one)
+    print STDERR "WARNING: pubkey $pubkey exists but $user already used as an external name\n"
+        if $external{$user};
     $user_list{$user} = 'has pubkey';
     if ($groups{'@SHELL'}{$user}) {
         print $newkeys_fh "command=\"$AUTH_COMMAND -s $user\",$AUTH_OPTIONS ";
@@ -459,8 +497,10 @@ for my $pubkey (glob("*"))
 # lint check 3; a little more severe than the first two I guess...
 for my $user (sort keys %user_list)
 {
-    next if $user =~ /^(gitweb|daemon|\@all)$/ or $user_list{$user} eq 'has pubkey';
-    print STDERR "$WARN user $user in config, but has no pubkey!\n";
+    next if $user =~ /^(gitweb|daemon|\@all)$/ or ( $user_list{$user} || '' ) eq 'has pubkey' or ( $internal{$user} || 0 ) == 1;
+    print STDERR "$WARN user $user in config, but has no pubkey and is not a mapping target!\n";
+    # XXX make this test run even if there are *no* pubkeys and this line not
+    # reached)
 }
 
 print $newkeys_fh "# gitolite end\n";
