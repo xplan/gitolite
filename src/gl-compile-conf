@@ -120,6 +120,13 @@ umask($REPO_UMASK);
 #       subroutines
 # ----------------------------------------------------------------------------
 
+my $error_count = 0;
+sub error           # error collecting code ;-)
+{
+    print STDERR "ERROR: @_\n";
+    $error_count++;
+}
+
 sub expand_list
 {
     my @list = @_;
@@ -179,23 +186,25 @@ sub parse_conf_file
         # useralias statements
         if (/^useralias (\S+) = (.+)/)
         {
-            die "useralias not allowed in fragment\n" unless $fragment eq 'master';
+            die "$ABRT useralias not allowed in fragment\n" unless $fragment eq 'master';
             my $intname = $1;
             my @extnames; @extnames = split(' ', $2);
 
+            die "$ABRT bad username $intname\n" unless $intname =~ $USERNAME_PATT;
             if ($external{$intname}) {
-                print STDERR "WARNING: $intname already appears on the right side of a useralias\n";
+                &error("$intname already appears on the right side of a useralias");
                 next;
             }
             $internal{$intname} = 1;
 
             for my $extname (@extnames) {
+                die "$ABRT bad username $extname\n" unless $extname =~ $USERNAME_PATT;
                 if ( $internal{$extname} ) {
-                    print STDERR "WARNING: $extname already appears on the left side of a useralias\n";
+                    &error("$extname already appears on the left side of a useralias");
                     next;
                 }
                 if ( $external{$extname} and $external{$extname} ne $intname ) {
-                    print STDERR "WARNING: $extname is already aliased to $external{$extname}, can't alias to $intname\n";
+                    &error("$extname is already aliased to $external{$extname}, can't alias to $intname");
                     next;
                 }
                 $external{$extname} = $intname;
@@ -322,6 +331,8 @@ sub parse_conf_file
 
 # parse the main config file
 parse_conf_file($GL_CONF, 'master');
+
+die "$ABRT $error_count error(s) above... aborting\n" if $error_count;
 
 # parse any delegated fragments
 wrap_chdir($GL_ADMINDIR);
