@@ -469,9 +469,8 @@ unless (glob("*.pub")) {
     for my $user (sort keys %user_list)
     {
         next if $user =~ /^(gitweb|daemon|\@all)$/ or ( $internal{$user} || 0 ) == 1;
-        &error("user $user in config, but is not a mapping target!");
+        print STDERR "$WARN user $user in config, but is not a mapping target!\n";
     }
-    die "$ABRT $error_count error(s) above... aborting\n" if $error_count;
 
     exit 0;
 }
