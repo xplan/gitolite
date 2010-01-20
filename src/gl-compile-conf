@@ -204,7 +204,7 @@ sub parse_conf_file
             map { warn "WARNING: old syntax 'PATH/' found; please use new syntax 'NAME/'\n" if s(^PATH/)(NAME/) } @refs;
             # fully qualify refs that dont start with "refs/" or "NAME/";
             # prefix them with "refs/heads/"
-            @refs = map { m(^(refs|NAME)/) or s(^)(refs/heads/); $_ } @refs;
+            @refs = map { m(^(refs|NAME|SIZE|COUNT)/) or s(^)(refs/heads/); $_ } @refs;
 
             # expand the user list, unless it is just "@all"
             @users = expand_list ( @users )
@@ -248,6 +248,8 @@ sub parse_conf_file
                         # that do *not* use NAME limits.  Setting a flag that
                         # can be checked right away will help us do that
                         $repos{$repo}{NAME_LIMITS} = 1 if $ref =~ /^NAME\//;
+                        $repos{$repo}{SIZE_LIMITS} = 1 if $ref =~ /^SIZE\//;
+                        $repos{$repo}{COUNT_LIMIT} = 1 if $ref =~ /^COUNT\//;
                         push @{ $repos{$repo}{$user} }, { $ref => $perms }
                             unless $rurp_seen{$repo}{$user}{$ref}{$perms}++;
                     }

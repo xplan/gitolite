@@ -67,10 +67,44 @@ push @allowed_refs, @ { $repos{$ENV{GL_REPO}}{'@all'} || [] };
 # previously, we just checked $ref -- the ref being updated, which is passed
 # to us by git (see man githooks).  Now we also have to treat each NAME being
 # updated as a potential "ref" and check that, if NAME-based restrictions have
-# been specified
+# been specified.  And then SIZE/1000000 [maximum size of *new* objects
+# created], and COUNT/10 [maximum number of objects changed] type of refs
+# (both are upper limits; lower limits don't make sense)
 
 my @refs = ($ref);      # the first ref to check is the real one
-if (exists $repos{$ENV{GL_REPO}}{NAME_LIMITS}) {
+
+# ----------------------------------------------------------------------------
+#       a couple of quick subroutines as a diversion :)
+# ----------------------------------------------------------------------------
+
+# get the max permissible value for SIZE/nnn and COUNT/nnn type refexes from
+# the list of allowed_refs for this repo+user combo
+sub get_max
+{
+    my ($key, $perm, @refs) = @_;
+    my $max = 0;
+    for my $r (@refs) {
+        my $refex = (keys %$r)[0];
+        # the refex should have a value that contains $perm ("W" or "+")
+        next unless ($r->{$refex} =~ /\Q$perm/);
+        # it should be SIZE/nnn or COUNT/nnn
+        next unless $refex =~ /^$key\/(\d+)$/;
+        # the largest such value is what we will finally use as a limit
+        $max = $1 if $max < $1;
+    }
+
+    return $max;
+}
+
+# add NAME/ refexes to the list.  While you're about it, also check SIZE/ and
+# COUNT/ for compliance
+sub add_more_refs
+{
+    # uses package global %repos and 2 arguments
+    my ($oldsha, $newsha, $perm, @allowed_refs) = @_;
+
+    my @refs = ();
+
     # this is special to git -- the hash of an empty tree
     my $empty='4b825dc642cb6eb9a060e54bf8d69288fbee4904';
     # well they're not really "trees" but $empty is indeed the empty tree so
@@ -78,8 +112,38 @@ if (exists $repos{$ENV{GL_REPO}}{NAME_LIMITS}) {
     # diff' only wants trees
     my $oldtree = $oldsha eq '0' x 40 ? $empty : $oldsha;
     my $newtree = $newsha eq '0' x 40 ? $empty : $newsha;
-    push @refs, map { chomp; s/^/NAME\//; $_; } `git diff --name-only $oldtree $newtree`;
+
+    # the first two tests don't actually add refs; we check straightaway --
+    # both tests consist of eventually comparing two numbers anyway.
+
+    if (exists $repos{$ENV{GL_REPO}}{SIZE_LIMITS}) {
+        chomp(my $actual_max = `git diff --diff-filter=A --raw --abbrev=40 $oldtree $newtree |cut -f4 -d' ' | xargs -r git cat-file -s | sort -nr | head -1`);
+        my $allowed_max = &get_max('SIZE', $perm, @allowed_refs);
+        die "$ENV{GL_USER} DENIED; largest new blob is $actual_max, max allowed is $allowed_max\n"
+            if ($actual_max and $allowed_max and $actual_max > $allowed_max);
+    }
+
+    if (exists $repos{$ENV{GL_REPO}}{COUNT_LIMIT}) {
+        chomp(my $actual_count = `git diff --name-only $oldtree $newtree | wc -l`);
+        my $allowed_count = &get_max('COUNT', $perm, @allowed_refs);
+        die "$ENV{GL_USER} DENIED; $actual_count blobs changed, max allowed is $allowed_count\n"
+            if ($actual_count and $allowed_count and $actual_count > $allowed_count);
+    }
+
+    # this one, however, adds refexes to the list to be checked
+
+    if (exists $repos{$ENV{GL_REPO}}{NAME_LIMITS}) {
+        push @refs, map { chomp; s/^/NAME\//; $_; } `git diff --name-only $oldtree $newtree`;
+    }
+
+    return @refs;
 }
+
+# ----------------------------------------------------------------------------
+#       and now, we return you to your regularly scheduled programming!
+# ----------------------------------------------------------------------------
+
+push @refs, &add_more_refs($oldsha, $newsha, $perm, @allowed_refs);
 
 my $refex = '';
 
