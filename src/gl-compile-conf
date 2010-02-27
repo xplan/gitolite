@@ -120,12 +120,23 @@ my %repo_config = ();
 my %desc = ();
 my %owner = ();
 
+# internal and external names
+my %internal = ();
+my %external = ();
+
 # set the umask before creating any files
 umask($REPO_UMASK);
 
 # ----------------------------------------------------------------------------
 #       subroutines
 # ----------------------------------------------------------------------------
+
+my $error_count = 0;
+sub error           # error collecting code ;-)
+{
+    print STDERR "ERROR: @_\n";
+    $error_count++;
+}
 
 sub expand_list
 {
@@ -179,6 +190,36 @@ sub parse_conf_file
         s/ $//;
         # and blank lines
         next unless /\S/;
+
+        # useralias statements
+        if (/^useralias (\S+) = (.+)/)
+        {
+            die "$ABRT useralias not allowed in fragment\n" unless $fragment eq 'master';
+            my $intname = $1;
+            my @extnames; @extnames = split(' ', $2);
+
+            die "$ABRT bad username $intname\n" unless $intname =~ $USERNAME_PATT;
+            if ($external{$intname}) {
+                &error("$intname already appears on the right side of a useralias");
+                next;
+            }
+            $internal{$intname} = 1;
+
+            for my $extname (@extnames) {
+                die "$ABRT bad username $extname\n" unless $extname =~ $USERNAME_PATT;
+                if ( $internal{$extname} ) {
+                    &error("$extname already appears on the left side of a useralias");
+                    next;
+                }
+                if ( $external{$extname} and $external{$extname} ne $intname ) {
+                    &error("$extname is already aliased to $external{$extname}, can't alias to $intname");
+                    next;
+                }
+                $external{$extname} = $intname;
+            }
+
+            next;
+        }
 
         # user or repo groups
         if (/^(@\S+) = (.*)/)
@@ -335,6 +376,8 @@ sub parse_conf_file
 # parse the main config file
 parse_conf_file($GL_CONF, 'master');
 
+die "$ABRT $error_count error(s) above... aborting\n" if $error_count;
+
 # parse any delegated fragments
 wrap_chdir($GL_ADMINDIR);
 for my $fragment_file (glob("conf/fragments/*.conf"))
@@ -369,6 +412,7 @@ my $dumped_data = Data::Dumper->Dump([\%repos], [qw(*repos)]);
 # much...
 $dumped_data =~ s/'(?=[^']*\$(?:creater|readers|writers))(.*?)'/"$1"/g;
 print $compiled_fh $dumped_data;
+print $compiled_fh Data::Dumper->Dump([\%external], [qw(*external)]) if %external;
 close $compiled_fh or die "$ABRT close compiled-conf failed: $!\n";
 
 # ----------------------------------------------------------------------------
@@ -489,6 +533,18 @@ close $projlist_fh;
 #       "compile" ssh authorized_keys
 # ----------------------------------------------------------------------------
 
+wrap_chdir($GL_KEYDIR);
+unless (glob("*.pub")) {
+    # lint check 3 (see below) repeated here with a slight modification
+    for my $user (sort keys %user_list)
+    {
+        next if $user =~ /^(gitweb|daemon|\@all|\$creater|\$readers|\$writers)$/ or ( $internal{$user} || 0 ) == 1;
+        print STDERR "$WARN user $user in config, but is not a mapping target!\n";
+    }
+
+    exit 0;
+}
+
 my $authkeys_fh = wrap_open( "<", $ENV{HOME} . "/.ssh/authorized_keys",
     "\tFor security reasons, gitolite will not *create* this file if it does\n" .
     "\tnot already exist.  Please see the \"admin\" document for details\n");
@@ -502,7 +558,6 @@ while (<$authkeys_fh>)
 # add our "start" line, each key on its own line (prefixed by command and
 # options, in the standard ssh authorized_keys format), then the "end" line.
 print $newkeys_fh "# gitolite start\n";
-wrap_chdir($GL_KEYDIR);
 for my $pubkey (glob("*"))
 {
     # lint check 1
@@ -515,6 +570,9 @@ for my $pubkey (glob("*"))
     # lint check 2
     print STDERR "WARNING: pubkey $pubkey exists but user $user not in config\n"
         unless $user_list{$user};
+    # lint check 2.5 (the new one)
+    print STDERR "WARNING: pubkey $pubkey exists but $user already used as an external name\n"
+        if $external{$user};
     $user_list{$user} = 'has pubkey';
     # apparently some pubkeys don't end in a newline...
     my $pubkey_content = `cat $pubkey`;
@@ -535,8 +593,8 @@ for my $pubkey (glob("*"))
 # lint check 3; a little more severe than the first two I guess...
 for my $user (sort keys %user_list)
 {
-    next if $user =~ /^(gitweb|daemon|\@all|\$creater|\$readers|\$writers)$/ or $user_list{$user} eq 'has pubkey';
-    print STDERR "$WARN user $user in config, but has no pubkey!\n";
+    next if $user =~ /^(gitweb|daemon|\@all|\$creater|\$readers|\$writers)$/ or ( $user_list{$user} || '' ) eq 'has pubkey' or ( $internal{$user} || 0 ) == 1;
+    print STDERR "$WARN user $user in config, but has no pubkey and is not a mapping target!\n";
 }
 
 print $newkeys_fh "# gitolite end\n";
