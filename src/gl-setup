@@ -21,13 +21,34 @@ GL_PACKAGE_CONF=/tmp/share/gitolite/conf
 
 die() { echo "$@"; echo death at line number ${BASH_LINENO[0]}; exit 1; }
 
+new_fangled_key()
+{
+    is_nfk=yes
+    # actually only some combos are allowed (specifically, ssh-56,
+    # openpgp-32/40/56/64 but there's no need to worry too much about this.
+    [[ $1 =~ ^(ssh|openpgp)-[0-9a-f]{32,64}$ ]] && return 0
+    # let's be a little conservative about unix usernames for now; change it
+    # later if someone complains...
+    [[ $1 =~ ^unix-[0-9a-zA-Z_.-]+$ ]] && return 0
+    is_nfk=
+    return 0
+}
+
 pubkey_file=$1
 admin_name=
+
 if [[ -n $pubkey_file ]]
 then
-    [[ $pubkey_file =~ .pub$ ]] || die "$pubkey_file must end in .pub"
-    [[ -f $pubkey_file ]] || die "cant find $pubkey_file"
-    admin_name=$(basename $pubkey_file .pub)
+    # this might be one of the new-fangled keys Ilari is working on :)
+    new_fangled_key $pubkey_file
+    if [[ -n $is_nfk ]]
+    then
+        admin_name=$pubkey_file
+    else
+        [[ $pubkey_file =~ .pub$ ]] || die "$pubkey_file must end in .pub"
+        [[ -f $pubkey_file ]] || die "cant find $pubkey_file"
+        admin_name=$(basename $pubkey_file .pub)
+    fi
 fi
 
 if [[ -f ~/.gitolite.rc ]]
@@ -48,16 +69,19 @@ then
     fi
     rm -f .newvars .oldvars .diffvars
 else
-    [[ -n $pubkey_file ]] || die "looks like first run -- I need a pubkey file"
+    [[ -n $admin_name ]] || die "looks like first run -- I need an argument"
     cp $GL_PACKAGE_CONF/example.gitolite.rc ~/.gitolite.rc
 fi
 
 # setup ssh stuff.  We break our normal rule that we will not fiddle with
 # authkeys etc., because in this case it seems appropriate
-cd
-mkdir -p .ssh
-touch .ssh/authorized_keys
-chmod go-w . .ssh .ssh/authorized_keys
+if [[ -z $is_nfk ]]
+then
+    cd
+    mkdir -p .ssh
+    touch .ssh/authorized_keys
+    chmod go-w . .ssh .ssh/authorized_keys
+fi
 
 # now we get to gitolite itself
 
@@ -75,7 +99,7 @@ REPO_BASE=$(  cd;perl -e 'do ".gitolite.rc"; print $REPO_BASE'  )
                 RW+     =   @all
 EOF
 }
-[[ -n $pubkey_file ]] && cp $pubkey_file $GL_ADMINDIR/keydir
+[[ -n $pubkey_file ]] && [[ -z $is_nfk ]] && cp $pubkey_file $GL_ADMINDIR/keydir
 
 touch $HOME/.ssh/authorized_keys
 gl-compile-conf -q
