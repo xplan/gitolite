@@ -29,7 +29,7 @@ new_fangled_key()
     echo $1 | grep '^(ssh|openpgp)-[0-9a-f]{32,64}$' > /dev/null && return 0
     # let's be a little conservative about unix usernames for now; change it
     # later if someone complains...
-    echo $1 | grep '^unix-[0-9a-zA-Z_.-]+$' > /dev/null && return 0
+    echo $1 | grep '^(srp|unix)-[0-9a-zA-Z_.-]+$' > /dev/null && return 0
     is_nfk=
     return 0
 }
