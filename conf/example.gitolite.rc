@@ -75,19 +75,6 @@ $GIT_PATH="";
 
 # --------------------------------------
 
-# if you want to give shell access to any gitolite user(s), name them here.
-# Please see doc/6-ssh-troubleshooting.mkd for details on how this works.
-
-# Do not add people to this list indiscriminately.  AUDITABILITY OF ACCESS
-# CONTROL CHANGES (AND OF REPO ACCESSES) WILL BE COMPROMISED IF ADMINS CAN
-# FIDDLE WITH THE ACTUAL (PLAIN TEXT) LOG FILES THAT GITOLITE KEEPS, WHICH
-# THEY CAN EASILY DO IF THEY HAVE A SHELL.
-
-# syntax: space separated list of gitolite usernames in *one* string variable.
-# $SHELL_USERS = "alice bob";
-
-# --------------------------------------
-
 
 
 # ----------------------------------------------------------------------
@@ -170,6 +157,18 @@ $RSYNC_BASE = "";
 # this variable.  Set this to 1 if you want to enable the wildrepos features.
 # Please see doc/4-wildcard-repositories.mkd for details.
 $GL_WILDREPOS = 0;
+
+# --------------------------------------
+# HOOK CHAINING
+
+# by default, the update hook in every repo chains to "update.secondary".
+# Similarly, the post-update hook in the admin repo chains to
+# "post-update.secondary".  If you're fine with the defaults, there's no need
+# to do anything here.  However, if you want to use different names or paths,
+# change these variables
+
+# $UPDATE_CHAINS_TO = "hooks/update.secondary";
+# $ADMIN_POST_UPDATE_CHAINS_TO = "hooks/post-update.secondary";
 
 # --------------------------------------
 # per perl rules, this should be the last line in such a file:

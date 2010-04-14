@@ -52,7 +52,7 @@ $Data::Dumper::Sortkeys = 1;
 open STDOUT, ">", "/dev/null" if (@ARGV and shift eq '-q');
 
 # these are set by the "rc" file
-our ($GL_ADMINDIR, $GL_CONF, $GL_KEYDIR, $GL_CONF_COMPILED, $REPO_BASE, $REPO_UMASK, $PROJECTS_LIST, $GIT_PATH, $SHELL_USERS, $GL_WILDREPOS, $GL_GITCONFIG_KEYS, $GL_PACKAGE_HOOKS);
+our ($GL_ADMINDIR, $GL_CONF, $GL_KEYDIR, $GL_CONF_COMPILED, $REPO_BASE, $REPO_UMASK, $PROJECTS_LIST, $GIT_PATH, $GL_WILDREPOS, $GL_GITCONFIG_KEYS, $GL_PACKAGE_HOOKS);
 # and these are set by gitolite.pm
 our ($REPONAME_PATT, $REPOPATT_PATT, $USERNAME_PATT, $AUTH_COMMAND, $AUTH_OPTIONS, $ABRT, $WARN);
 
@@ -232,7 +232,7 @@ sub parse_conf_file
             s/\bCREAT[EO]R\b/\$creater/g for @repos;
         }
         # actual permission line
-        elsif (/^(-|C|R|RW|RW\+) (.* )?= (.+)/)
+        elsif (/^(-|C|D|R|RW|RW\+) (.* )?= (.+)/)
         {
             my $perms = $1;
             my @refs; @refs = split(' ', $2) if $2;
@@ -298,7 +298,12 @@ sub parse_conf_file
                     # for 1st level check (see faq/tips doc)
                     $repos{$repo}{C}{$user} = 1, next if $perms eq 'C';
                     $repos{$repo}{R}{$user} = 1 if $perms =~ /R/;
-                    $repos{$repo}{W}{$user} = 1 if $perms =~ /W/;
+                    $repos{$repo}{W}{$user} = 1 if $perms =~ /W|D/;
+
+                    # if the user specified even a single 'D' anywhere, make
+                    # that fact easy to find; this changes the meaning of RW+
+                    # to no longer permit deletes (see update hook)
+                    $repos{$repo}{DELETE_IS_D} = 1 if $perms eq 'D';
 
                     # for 2nd level check, store each "ref, perms" pair in order
                     for my $ref (@refs)
@@ -428,6 +433,7 @@ wrap_chdir("$repo_base_abs");
 for my $repo (sort keys %repos) {
     next unless $repo =~ $REPONAME_PATT;
     next if $repo =~ m(^EXTCMD/);   # these are not real repos
+    next if $repo eq '@all';
     unless (-d "$repo.git") {
         print STDERR "creating $repo...\n";
         new_repo($repo, "$GL_ADMINDIR/hooks/common");
@@ -559,15 +565,27 @@ while (<$authkeys_fh>)
 # add our "start" line, each key on its own line (prefixed by command and
 # options, in the standard ssh authorized_keys format), then the "end" line.
 print $newkeys_fh "# gitolite start\n";
-for my $pubkey (glob("*"))
+for my $pubkey (`find . -type f`)
 {
+    chomp($pubkey); $pubkey =~ s(^\./)();
+
+    # security check (thanks to divVerent for catching this)
+    unless ($pubkey =~ $REPONAME_PATT) {
+        print STDERR "$pubkey contains some unsavoury characters; ignored...\n";
+        next;
+    }
+
     # lint check 1
     unless ($pubkey =~ /\.pub$/)
     {
         print STDERR "WARNING: pubkey files should end with \".pub\", ignoring $pubkey\n";
         next;
     }
-    my $user = $pubkey; $user =~ s/(\@[^.]+)?\.pub$//;
+
+    my $user = $pubkey;
+    $user =~ s(.*/)();                  # foo/bar/baz.pub -> baz.pub
+    $user =~ s/(\@[^.]+)?\.pub$//;      # baz.pub, baz@home.pub -> baz
+
     # lint check 2
     print STDERR "WARNING: pubkey $pubkey exists but user $user not in config\n"
         unless $user_list{$user};
@@ -584,11 +602,7 @@ for my $pubkey (glob("*"))
         print STDERR "WARNING: a pubkey file can only have one line (key); ignoring $pubkey\n";
         next;
     }
-    if ($SHELL_USERS and $SHELL_USERS =~ /(^|\s)$user(\s|$)/) {
-        print $newkeys_fh "command=\"$AUTH_COMMAND -s $user\",$AUTH_OPTIONS ";
-    } else {
-        print $newkeys_fh "command=\"$AUTH_COMMAND $user\",$AUTH_OPTIONS,no-pty ";
-    }
+    print $newkeys_fh "command=\"$AUTH_COMMAND $user\",$AUTH_OPTIONS,no-pty ";
     print $newkeys_fh $pubkey_content;
 }
 # lint check 3; a little more severe than the first two I guess...

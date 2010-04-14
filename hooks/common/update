@@ -25,8 +25,12 @@ use warnings;
 #       common definitions
 # ----------------------------------------------------------------------------
 
-our ($GL_CONF_COMPILED);
+our ($GL_CONF_COMPILED, $UPDATE_CHAINS_TO);
 our %repos;
+
+# people with shell access should be allowed to bypass the update hook, simply
+# by setting an env var that the ssh "front door" will never set
+exit 0 if exists $ENV{GL_BYPASS_UPDATE_HOOK};
 
 # we should already have the GL_RC env var set when we enter this hook
 die "parse $ENV{GL_RC} failed: "       . ($! or $@) unless do $ENV{GL_RC};
@@ -75,6 +79,10 @@ $perm = '+' if $ref =~ m(refs/tags/) and $oldsha ne ('0' x 40);
 # notice that ref delete looks like a rewind, as it should
 $perm = '+' if $oldsha ne $merge_base;
 
+# were any 'D' perms specified?  If they were, it means we have to separate
+# deletes from rewinds, so if the new sha is all 0's, change the '+' to a 'D'
+$perm = 'D' if ( $repos{$ENV{GL_REPO}}{DELETE_IS_D} or $repos{'@all'}{DELETE_IS_D} ) and $newsha eq '0' x 40;
+
 my @allowed_refs;
 # @all repos: see comments in similar code in check_access
 push @allowed_refs, @ { $repos{$ENV{GL_REPO}}{$ENV{GL_USER}} || [] };
@@ -115,7 +123,8 @@ my $log_refex = check_ref(\@allowed_refs, $ENV{GL_REPO}, (shift @refs), $perm);
     "\t$reported_repo\t$ref\t$ENV{GL_USER}\t$log_refex\n");
 
 # now chain to the local admin defined update hook, if present
-exec "./hooks/update.secondary", @saved_ARGV
-    if -f "hooks/update.secondary" or -l "hooks/update.secondary";
+$UPDATE_CHAINS_TO ||= 'hooks/update.secondary';
+exec $UPDATE_CHAINS_TO, @saved_ARGV
+    if -f $UPDATE_CHAINS_TO or -l $UPDATE_CHAINS_TO;
 
 exit 0;
