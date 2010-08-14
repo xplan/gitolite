@@ -202,11 +202,17 @@ $ENV{GL_REPO}=$repo;
 # ----------------------------------------------------------------------------
 
 my ($perm, $creator, $wild) = &repo_rights($repo);
+# if $perm =~ /C/, means repo not exist!
 if ($perm =~ /C/) {
-    # it was missing, and you have create perms
-    wrap_chdir("$repo_base_abs");
-    new_repo($repo, "$GL_ADMINDIR/hooks/common", $user);
-    wrap_chdir($ENV{HOME});
+    # when clone non-exist repo, do not create on-the-fly.
+    if ($verb =~ $W_COMMANDS) {
+        # it was missing, and you have create perms
+        wrap_chdir("$repo_base_abs");
+        new_repo($repo, "$GL_ADMINDIR/hooks/common", $user);
+        wrap_chdir($ENV{HOME});
+    } else {
+        die "Repo $repo does not exist!\nBut since you have the create permission, you can PUSH to create the repository.\n"
+    }
 }
 
 # we know the user and repo; we just need to know what perm he's trying
