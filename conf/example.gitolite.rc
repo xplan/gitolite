@@ -34,7 +34,8 @@ $REPO_BASE="repositories";
 # like gitweb and find it can't read the repos.  Please note the syntax;  the
 # leading 0 is required
 
-$REPO_UMASK = 0077;         # gets you 'rwx------'
+$REPO_UMASK = 0007;         # gets you 'rwxrwx---'
+# $REPO_UMASK = 0077;       # gets you 'rwx------'
 # $REPO_UMASK = 0027;       # gets you 'rwxr-x---'
 # $REPO_UMASK = 0022;       # gets you 'rwxr-xr-x'
 
@@ -202,7 +203,7 @@ $SVNSERVE = "";
 # this variable.  Set this to 1 if you want to enable the wildrepos features.
 # Please see doc/4-wildcard-repositories.mkd for details.
 
-$GL_WILDREPOS = 0;
+$GL_WILDREPOS = 1;
 
 # --------------------------------------
 # DEFAULT WILDCARD PERMISSIONS
