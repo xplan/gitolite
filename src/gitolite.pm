@@ -687,11 +687,13 @@ sub get_memberships {
                 if ($base eq $i) {
                     # indirect
                     push @ret, $g;
+                    last
                 } elsif ($is_repo and $GL_WILDREPOS and not @ret and $base =~ /^$i$/) {
                     die "$ABRT $base matches $wild AND $i\n" if $wild and $wild ne $i;
                     $wild = $i;
                     # indirect wildcard
                     push @ret_w, $g;
+                    last
                 }
             }
         }
