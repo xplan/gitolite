@@ -447,6 +447,7 @@ unless ($GL_NO_CREATE_REPOS) {
     for my $repo (sort @repos) {
         next unless $repo =~ $REPONAME_PATT;
         next if $repo =~ m(^\@|EXTCMD/);    # these are not real repos
+        next if $GL_WILDREPOS and ( $repo =~ /(^\^|\$$)/ or $repo =~ /\.(\*|\+)/ ); # is wild repos
         unless (-d "$repo.git") {
             print STDERR "creating $repo...\n";
             new_repo($repo, "$GL_ADMINDIR/hooks/common");
