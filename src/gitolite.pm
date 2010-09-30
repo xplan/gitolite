@@ -445,14 +445,14 @@ sub expand_wild
             $creator = '<gitolite>';
         } elsif ($exists) {
             # is a wildrepo, and it has already been created
-            if ($creator and $creator == $ENV{GL_USER}) {
-                $perm = ' =R =W';
+            if ($creator and $creator eq $ENV{GL_USER}) {
+                $perm = ' %R %W';
             }
             $creator = "($creator)";
         } else {
             # repo didn't exist; C perms need to be filled in
             # PUSH to create needs user has both C and RW rights.
-            $perm = ( $repos{$repo}{C}{'@all'} ? ' @C  @R  @W' : ( $repos{$repo}{C}{$ENV{GL_USER}} ? ' =C  =R  =W' : '   ' )) if $GL_WILDREPOS;
+            $perm = ( $repos{$repo}{C}{'@all'} ? ' @C  @R  @W' : ( $repos{$repo}{C}{$ENV{GL_USER}} ? ' =C  %R  %W' : '   ' )) if $GL_WILDREPOS;
             # if you didn't have perms to create it, delete the "convenience"
             # copy of the ACL that parse_acl makes
             delete $repos{$repo} if $perm !~ /C/ and $wild;
