@@ -386,6 +386,11 @@ my $dumped_data = Data::Dumper->Dump([\%repos], [qw(*repos)]);
 # $readers, $writers, to double quoted strings.  A wee bit sneaky, but not too
 # much...
 $dumped_data =~ s/'(?=[^']*\$(?:creator|readers|writers|gl_user))~?(.*?)'/"$1"/g;
+# if there is a $ (regex special char) in the double quoted strings,
+# escape it. (jiangxin@ossxp.com)
+$dumped_data =~ s/(\$)(creator|readers|writers|gl_user)/!#!$2/g;
+$dumped_data =~ s/(?<=[^\\])\$(?=[^'"\s]*?")/\\\$/g;
+$dumped_data =~ s/(!#!)(creator|readers|writers|gl_user)/\$$2/g;
 print $compiled_fh $dumped_data;
 print $compiled_fh Data::Dumper->Dump([\%groups], [qw(*groups)]) if $GL_BIG_CONFIG and %groups;
 close $compiled_fh or die "$ABRT close compiled-conf failed: $!\n";
