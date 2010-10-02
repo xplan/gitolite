@@ -79,6 +79,9 @@ $ENV{PATH} .= ":$GIT_PATH" if $GIT_PATH;
 # group is defined).
 our %groups = ();
 
+# map repo from A to B
+our %mapping = ();
+
 # %repos has two functions.
 
 # $repos{repo}{R|W}{user} = 1 if user has R (or W) permissions for at least
@@ -164,6 +167,7 @@ sub parse_conf_file
         # kill comments, but take care of "#" inside *simple* strings
         s/^((".*?"|[^#"])*)#.*/$1/;
         # normalise whitespace; keeps later regexes very simple
+        # TODO: remove next two clause. if complicate regex "(?=...)" used, failed.
         s/=/ = /;
         s/\s+/ /g;
         s/^ //;
@@ -180,6 +184,13 @@ sub parse_conf_file
             # the group was *first* created by using $fragment as the *value*
             do { $groups{$1}{$_} ||= $fragment } for ( expand_list( split(' ', $2) ) );
             die "$ABRT bad group $1\n" unless $1 =~ $REPONAME_PATT;
+        }
+        # mapping repo from A to B.
+        # B should not start with double quote, or conflict with latter regex of gitweb description.
+        elsif (/^map (.*\S)\s*=\s*([^"].*?)$/)
+        {
+            # store each mapping as hash.
+            $mapping{$1} = "sub { \"$2\" }";
         }
         # repo(s)
         elsif (/^repo (.*)/)
@@ -381,6 +392,9 @@ for my $fragment_file (glob("conf/fragments/*.conf"))
 my $compiled_fh = wrap_open( ">", "$GL_CONF_COMPILED.new" );
 my $data_version = $current_data_version;
 print $compiled_fh Data::Dumper->Dump([$data_version], [qw(*data_version)]);
+my $dumped_data = Data::Dumper->Dump([\%mapping], [qw(*mapping)]);
+$dumped_data =~ s/'(sub {.*})'/$1/g;
+print $compiled_fh $dumped_data;
 my $dumped_data = Data::Dumper->Dump([\%repos], [qw(*repos)]);
 # the dump uses single quotes, but we convert any strings containing $creator,
 # $readers, $writers, to double quoted strings.  A wee bit sneaky, but not too

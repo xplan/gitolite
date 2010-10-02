@@ -40,6 +40,7 @@ our $REPOPATT_PATT=qr(^\@?[0-9a-zA-Z[][\\^.$|()[\]*+?{}0-9a-zA-Z._\@/-]*$);
 our ($REPO_UMASK, $GL_WILDREPOS, $GL_PACKAGE_CONF, $GL_PACKAGE_HOOKS, $REPO_BASE, $GL_CONF_COMPILED, $GL_BIG_CONFIG);
 our %repos;
 our %groups;
+our %mapping;
 our $data_version;
 our $current_data_version = '1.5';
 
@@ -243,6 +244,25 @@ sub get_set_desc
     }
 }
 
+# ----------------------------------------------------------------------------
+#       map repo from A to B
+# ----------------------------------------------------------------------------
+
+sub map_repo
+{
+    my ($GL_CONF_COMPILED, $repo) = @_;
+    die "parse $GL_CONF_COMPILED failed: " . ($! or $@) unless do $GL_CONF_COMPILED;
+
+    for my $m (sort keys %mapping) {
+        if ($repo =~ /^$m$/) {
+            $repo =~ s/$m/$mapping{$m}->()/e;
+            last
+        }
+    }
+
+    return $repo;
+}
+ 
 # ----------------------------------------------------------------------------
 #       parse the compiled acl
 # ----------------------------------------------------------------------------
