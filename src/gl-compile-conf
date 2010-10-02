@@ -395,7 +395,7 @@ print $compiled_fh Data::Dumper->Dump([$data_version], [qw(*data_version)]);
 my $dumped_data = Data::Dumper->Dump([\%mapping], [qw(*mapping)]);
 $dumped_data =~ s/'(sub {.*})'/$1/g;
 print $compiled_fh $dumped_data;
-my $dumped_data = Data::Dumper->Dump([\%repos], [qw(*repos)]);
+$dumped_data = Data::Dumper->Dump([\%repos], [qw(*repos)]);
 # the dump uses single quotes, but we convert any strings containing $creator,
 # $readers, $writers, to double quoted strings.  A wee bit sneaky, but not too
 # much...
