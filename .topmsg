@@ -1,0 +1,6 @@
+From: Jiang Xin <jiangxin@ossxp.com>
+Subject: [PATCH] t/push_to_create
+
+Push to create new repository, and not create by clone.
+
+Signed-off-by: Jiang Xin <jiangxin@ossxp.com>
