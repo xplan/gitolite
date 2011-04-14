@@ -19,13 +19,21 @@ usage() {
       - (FIX #1: REWINDING BAD ADMIN COMMITS) if your last commit(s) to the
         gitolite-admin repo pushed a very bad config and you want to rewind it
         to a known good state, run this:
-            ./gl-dont-panic rewind
+
+            $0 rewind
+
         (this doesn't actually rewind; it creates a new commit that has
         the same state as the last good commit, which has the same effect)
 
-      - (FIX #2: PUSHING A NEW ADMIN KEY) if you lost your admin key, run this
-        with the new pubkey:
-            ./gl-dont-panic sitaram.pub
+      - (FIX #2: PUSHING A NEW ADMIN KEY) if you lost your admin key, or you
+        had used the wrong key initially, then you get yourself a new keypair
+        and run this with the new pubkey:
+
+            $0 sitaram.pub          # example using my name
+
+        Please note that this simply *replaces* the key for user "sitaram".
+        It does NOT add a new admin called "sitaram".  In fact it does not
+        touch the config file (access rules) at all.
 
     Step 3: completing the fix (on your workstation)
 
@@ -41,7 +49,7 @@ fi
 
 # ------------------------------------------------------------------------
 # arg check
-die() { echo "$@"; exit 1; }
+die() { echo "$@"; exit 1; } >&2
 cd $HOME        # if he didn't *start* there, it's his bloody fault
 [ -f "$1" ] || [ "$1" = "rewind" ] || die "need a valid file or 'rewind'"
 if [ "$1" = "rewind" ]
@@ -54,15 +62,24 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# setup stuff
-REPO_BASE=$(  cd $HOME; perl -e 'do ".gitolite.rc"; print $REPO_BASE'  )
-GL_BINDIR=$(  cd $HOME; perl -ne 'print($1), exit if /^command="(.*?)\/gl-auth-command /' < $HOME/.ssh/authorized_keys)
-GL_ADMINDIR=$(cd $HOME; perl -e 'do ".gitolite.rc"; print $GL_ADMINDIR')
+# setup stuff.  Note that for *this* program, we don't want to rely on $0
+# telling us bindir; the user should be allowed to run it from anywhere and
+# still have it work.  Luckily, by the time you feel the need to run this
+# program, authkeys is already populated, and anyway that's the only
+# *reliable* place to get this info.  However, when running in HTTP mode or
+# Fedora mode, you have *no* keys in the authkeys file.  In those cases you
+# have to manually set GL_BINDIR externally before running this program
+[ -z "$GL_BINDIR" ] &&
+    GL_BINDIR=$(  perl -ne 'print($1), exit if /^command="(.+?)\/gl-(time|auth-command) /' < $HOME/.ssh/authorized_keys)
+GL_RC=$(      $GL_BINDIR/gl-query-rc GL_RC)
+REPO_BASE=$(  $GL_BINDIR/gl-query-rc REPO_BASE)
+GL_ADMINDIR=$($GL_BINDIR/gl-query-rc GL_ADMINDIR)
+export GL_RC
 export REPO_BASE
 export GL_BINDIR
 export GL_ADMINDIR
 
-TEMPDIR=$(mktemp -d)
+TEMPDIR=$(mktemp -d -t tmp.XXXXXXXXXX)
 export TEMPDIR
 trap "/bin/rm -rf $TEMPDIR" 0
 
@@ -73,8 +90,8 @@ then
     git clone $REPO_BASE/gitolite-admin.git $TEMPDIR
     cd $TEMPDIR
 
-    echo printing the previous 9 commits to the config; echo
-    git log --date=relative --format="%h %ar%x09%s" | perl -pe 'print "$.\t"'
+    echo printing the last 9 commits to the config; echo
+    git log -9 --date=relative --format="%h %ar%x09%s" | perl -pe 'print "$.\t"'
     echo; read -p 'please enter how many commits you want to rewind: ' n
     good=`git rev-parse --short HEAD~$n`
 
