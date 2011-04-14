@@ -12,6 +12,7 @@ use Exporter 'import';
     list_phy_repos
     ln_sf
     log_it
+    map_repo
     new_repo
     new_wild_repo
     repo_rights
@@ -59,6 +60,7 @@ use gitolite_rc;
 
 our %repos;
 our %groups;
+our %mapping;
 our %git_configs;
 our %split_conf;
 our $data_version;
@@ -556,6 +558,25 @@ sub expand_wild
     print "$GL_SITE_INFO\n" if $GL_SITE_INFO;
 }
 
+# ----------------------------------------------------------------------------
+#       map repo from A to B
+# ----------------------------------------------------------------------------
+
+sub map_repo
+{
+    my ($GL_CONF_COMPILED, $repo) = @_;
+    die "parse $GL_CONF_COMPILED failed: " . ($! or $@) unless do $GL_CONF_COMPILED;
+
+    for my $m (sort keys %mapping) {
+        if ($repo =~ /^$m$/) {
+            $repo =~ s/$m/$mapping{$m}->()/e;
+            last
+        }
+    }
+
+    return $repo;
+}
+ 
 # ----------------------------------------------------------------------------
 #       parse the compiled acl
 # ----------------------------------------------------------------------------
