@@ -5,7 +5,22 @@
 use strict;
 use warnings;
 
-our ($REPO_BASE, $GL_ADMINDIR, $GL_CONF, $GIT_PATH, $GL_PACKAGE_CONF, $GL_PACKAGE_HOOKS);
+# ----------------------------------------------------------------------------
+#       find the rc file, then pull the libraries
+# ----------------------------------------------------------------------------
+
+BEGIN {
+    die "ENV GL_RC not set\n" unless $ENV{GL_RC};
+    die "ENV GL_BINDIR not set\n" unless $ENV{GL_BINDIR};
+}
+
+use lib $ENV{GL_BINDIR};
+use gitolite_rc;
+use gitolite;
+
+# ----------------------------------------------------------------------------
+#       start...
+# ----------------------------------------------------------------------------
 
 # setup quiet mode if asked; please do not use this when running manually
 open STDOUT, ">", "/dev/null" if (@ARGV and shift eq '-q');
@@ -15,28 +30,23 @@ open STDOUT, ">", "/dev/null" if (@ARGV and shift eq '-q');
 sub wrap_mkdir
 {
     my $dir = shift;
+    my $perm = shift;       # optional
     if ( -d $dir ) {
         print "$dir already exists\n";
         return;
     }
     mkdir($dir) or die "mkdir $dir failed: $!\n";
+    chmod $perm, $dir if $perm;
     print "created $dir\n";
 }
 
-# the common setup module is in the same directory as this running program is
-my $bindir = $0;
-$bindir =~ s/\/[^\/]+$//;
-require "$bindir/gitolite.pm";
-
-# ask where the rc file is, get it, and "do" it
-&where_is_rc();
 unless ($ENV{GL_RC}) {
     # doesn't exist.  Copy it across, tell user to edit it and come back
     my $glrc = $ENV{HOME} . "/.gitolite.rc";
     if ($GL_PACKAGE_CONF) {
         system("cp $GL_PACKAGE_CONF/example.gitolite.rc $glrc");
     } else {
-        system("cp $bindir/../conf/example.gitolite.rc $glrc");
+        system("cp $ENV{GL_BINDIR}/../conf/example.gitolite.rc $glrc");
     }
     print "created $glrc\n";
     print "please edit it, change the paths if you wish to, and RERUN THIS SCRIPT\n";
@@ -49,22 +59,25 @@ die "parse $ENV{GL_RC} failed: " . ($! or $@) unless do $ENV{GL_RC};
 # add a custom path for git binaries, if specified
 $ENV{PATH} .= ":$GIT_PATH" if $GIT_PATH;
 
+# set the umask before creating any files/directories
+umask($REPO_UMASK);
+
 # mkdir $REPO_BASE, $GL_ADMINDIR if they don't already exist
-my $repo_base_abs = ( $REPO_BASE =~ m(^/) ? $REPO_BASE : "$ENV{HOME}/$REPO_BASE" );
-wrap_mkdir($repo_base_abs);
-wrap_mkdir($GL_ADMINDIR);
+$ENV{GL_REPO_BASE_ABS} = ( $REPO_BASE =~ m(^/) ? $REPO_BASE : "$ENV{HOME}/$REPO_BASE" );
+wrap_mkdir($ENV{GL_REPO_BASE_ABS});
+wrap_mkdir($GL_ADMINDIR, 0700);
 # mkdir $GL_ADMINDIR's subdirs
 for my $dir qw(conf doc keydir logs src hooks hooks/common hooks/gitolite-admin) {
     # some of them will stay empty; too lazy to fix right now ;-)
-    wrap_mkdir("$GL_ADMINDIR/$dir");
+    wrap_mkdir("$GL_ADMINDIR/$dir", 0700);
 }
 
 # "src" and "doc" will be overwritten on each install, but not conf
 if ($GL_PACKAGE_HOOKS) {
     system("cp -R -p $GL_PACKAGE_HOOKS $GL_ADMINDIR");
 } else {
-    system("cp -R -p $bindir/../src $bindir/../doc $bindir/../hooks $GL_ADMINDIR");
-    system("cp       $bindir/../conf/VERSION                        $GL_ADMINDIR/conf");
+    system("cp -R -p $ENV{GL_BINDIR}/../src $ENV{GL_BINDIR}/../doc $ENV{GL_BINDIR}/../hooks $GL_ADMINDIR");
+    system("cp       $ENV{GL_BINDIR}/../conf/VERSION                        $GL_ADMINDIR/conf");
 }
 
 unless (-f $GL_CONF or $GL_PACKAGE_CONF) {
@@ -80,8 +93,8 @@ EOF
 }
 
 # finally, hooks must be propagated to all the repos in case they changed
-chdir("$repo_base_abs") or die "chdir $repo_base_abs failed: $!\n";
-for my $repo (`find . -type d -name "*.git"`) {
+chdir("$ENV{GL_REPO_BASE_ABS}") or die "chdir $ENV{GL_REPO_BASE_ABS} failed: $!\n";
+for my $repo (`find . -type d -name "*.git" -prune`) {
     chomp ($repo);
     # propagate our own, plus any local admin-defined, hooks
     ln_sf("$GL_ADMINDIR/hooks/common", "*", "$repo/hooks");
