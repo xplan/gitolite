@@ -2,48 +2,41 @@
 
 In this document:
 
-  * <a href="#common_errors_and_mistakes">common errors and mistakes</a>
-  * <a href="#git_version_dependency">git version dependency</a>
-  * <a href="#other_errors_warnings_notes_">other errors, warnings, notes...</a>
-      * <a href="#cloning_an_empty_repo">cloning an empty repo</a>
-      * <a href="#all_syntax_for_repos">`@all` syntax for repos</a>
-      * <a href="#umask_setting">umask setting</a>
-  * <a href="#getting_a_tar_file_from_a_clone">getting a tar file from a clone</a>
-  * <a href="#features">features</a>
-      * <a href="#syntax_and_normal_usage">syntax and normal usage</a>
-          * <a href="#simpler_syntax">simpler syntax</a>
-          * <a href="#one_user_many_keys">one user, many keys</a>
-      * <a href="#security_access_control_and_auditing">security, access control, and auditing</a>
-          * <a href="#two_levels_of_access_rights_checking">two levels of access rights checking</a>
-          * <a href="#better_logging">better logging</a>
-          * <a href="#exclude_or_deny_rules">"exclude" (or "deny") rules</a>
-          * <a href="#separating_delete_and_rewind_rights">separating delete and rewind rights</a>
-          * <a href="#separating_create_and_push_rights">separating create and push rights</a>
-          * <a href="#file_dir_NAME_based_restrictions">file/dir NAME based restrictions</a>
-          * <a href="#delegating_parts_of_the_config_file">delegating parts of the config file</a>
-      * <a href="#convenience_features">convenience features</a>
-          * <a href="#what_repos_do_I_have_access_to_">what repos do I have access to?</a>
-          * <a href="#including_config_lines_from_other_files">including config lines from other files</a>
-          * <a href="#support_for_git_installed_outside_default_PATH">support for git installed outside default PATH</a>
-          * <a href="#personal_branches">"personal" branches</a>
-          * <a href="#custom_hooks_and_custom_git_config">custom hooks and custom git config</a>
-          * <a href="#bypassing_gitolite">bypassing gitolite</a>
-      * <a href="#INconvenience_features">INconvenience features</a>
-          * <a href="#deleting_a_repo">deleting a repo</a>
-      * <a href="#helping_with_gitweb">helping with gitweb</a>
-          * <a href="#easier_to_specify_gitweb_description_and_gitweb_daemon_access">easier to specify gitweb "description" and gitweb/daemon access</a>
-          * <a href="#easier_to_link_gitweb_authorisation_with_gitolite">easier to link gitweb authorisation with gitolite</a>
-      * <a href="#advanced_features">advanced features</a>
-          * <a href="#repos_named_with_wildcards">repos named with wildcards</a>
-          * <a href="#admin_defined_commands">admin defined commands</a>
-          * <a href="#access_control_for_external_commands">access control for external commands</a>
-              * <a href="#svnserve">svnserve</a>
-  * <a href="#design_choices">design choices</a>
-      * <a href="#keeping_the_parser_and_the_access_control_separate">keeping the parser and the access control separate</a>
+  * <a href="#_common_errors_and_mistakes">common errors and mistakes</a>
+  * <a href="#_other_errors_warnings_notes_">other errors, warnings, notes...</a>
+      * <a href="#_cloning_an_empty_repo">cloning an empty repo</a>
+      * <a href="#_all_syntax_for_repos">`@all` syntax for repos</a>
+  * <a href="#_features">features</a>
+      * <a href="#_syntax_and_normal_usage">syntax and normal usage</a>
+          * <a href="#_one_user_many_keys">one user, many keys</a>
+      * <a href="#_security_access_control_and_auditing">security, access control, and auditing</a>
+          * <a href="#_two_levels_of_access_rights_checking">two levels of access rights checking</a>
+          * <a href="#_better_logging">better logging</a>
+          * <a href="#_delegating_parts_of_the_config_file">delegating parts of the config file</a>
+      * <a href="#_convenience_features">convenience features</a>
+          * <a href="#_what_repos_do_I_have_access_to_">what repos do I have access to?</a>
+          * <a href="#_support_for_git_installed_outside_default_PATH">support for git installed outside default PATH</a>
+          * <a href="#_personal_branches">"personal" branches</a>
+          * <a href="#_custom_hooks_and_custom_git_config">custom hooks and custom git config</a>
+          * <a href="#_bypassing_gitolite">bypassing gitolite</a>
+          * <a href="#_disabling_write_access_to_take_backups">disabling write access to take backups</a>
+      * <a href="#_INconvenience_features">INconvenience features</a>
+          * <a href="#_deleting_a_repo">deleting a repo</a>
+          * <a href="#_renaming_a_repo">renaming a repo</a>
+      * <a href="#_helping_with_gitweb">helping with gitweb</a>
+          * <a href="#_easier_to_link_gitweb_authorisation_with_gitolite">easier to link gitweb authorisation with gitolite</a>
+          * <a href="#_umask_setting">umask setting</a>
+      * <a href="#_advanced_features">advanced features</a>
+          * <a href="#_repos_named_with_wildcards">repos named with wildcards</a>
+          * <a href="#_admin_defined_commands">admin defined commands</a>
+          * <a href="#_access_control_for_external_commands">access control for external commands</a>
+              * <a href="#_svnserve">svnserve</a>
+  * <a href="#_design_choices">design choices</a>
+      * <a href="#_keeping_the_parser_and_the_access_control_separate">keeping the parser and the access control separate</a>
 
 ----
 
-<a name="common_errors_and_mistakes"></a>
+<a name="_common_errors_and_mistakes"></a>
 
 ### common errors and mistakes
 
@@ -65,19 +58,13 @@ In this document:
     In other words, you used a key that completely bypassed gitolite and went
     straight to the shell to do the clone.
 
-    Please see doc/6-ssh-troubleshooting.mkd for what all this means.
+    Please see doc/ssh-troubleshooting.mkd for what all this means.
 
-<a name="git_version_dependency"></a>
-
-### git version dependency
-
-Gitolite (on the server) now refuses to run if git is not at least 1.6.2.
-
-<a name="other_errors_warnings_notes_"></a>
+<a name="_other_errors_warnings_notes_"></a>
 
 ### other errors, warnings, notes...
 
-<a name="cloning_an_empty_repo"></a>
+<a name="_cloning_an_empty_repo"></a>
 
 #### cloning an empty repo
 
@@ -90,42 +77,18 @@ end hung up unexpectedly`.  However, you can ignore this, since it doesn't
 seem to hurt anything.  [Update 2009-09-14; this has been fixed in git
 1.6.4.3]
 
-<a name="all_syntax_for_repos"></a>
+<a name="_all_syntax_for_repos"></a>
 
 #### `@all` syntax for repos
 
 There *is* a way to use the `@all` syntax for repos also, as described in
-`conf/example.conf`.  However, there are a couple of minor cautions:
+`doc/gitolite.conf.mkd`.  However, there are a couple of minor cautions:
 
   * don't use `NAME/` or such restrictions on the special `@all` repo.  Due to
     the potential for defeating a crucial optimisation and slowing down *all*
     access, we do not support this.
-  * don't try giving `@all` users some permission for `@all` repos
 
-<a name="umask_setting"></a>
-
-#### umask setting
-
-Gitweb not able to read your repos?  You can change the umask for newly
-created repos to something more relaxed -- see the `~/.gitolite.rc` file
-
-<a name="getting_a_tar_file_from_a_clone"></a>
-
-### getting a tar file from a clone
-
-You can clone the repo from github or indefero, then execute a make command to
-extract a tar file of the branch you want.  Please use the make command, not a
-plain "git archive", because the Makefile adds a file called
-`.GITOLITE-VERSION` that will help you identify which version you are using.
-
-    git clone git://github.com/sitaramc/gitolite.git
-            # (OR)
-    git clone git://sitaramc.indefero.net/sitaramc/gitolite.git
-    cd gitolite
-    make master.tar
-    # or maybe "make pu.tar"
-
-<a name="features"></a>
+<a name="_features"></a>
 
 ### features
 
@@ -133,56 +96,13 @@ Apart from the big ones listed in the top level README, and subjective ones
 like "better config file format", gitolite has evolved to have many useful
 features than the original goal of branch-level access control.
 
-<a name="syntax_and_normal_usage"></a>
+<a name="_syntax_and_normal_usage"></a>
 
 #### syntax and normal usage
 
-<a name="simpler_syntax"></a>
+<a name="multikeys"></a>
 
-##### simpler syntax
-
-The basic syntax is simpler and cleaner but it goes beyond that: **you can
-specify access in bits and pieces**, even if they overlap.
-
-Some access needs are best grouped by repo, some by username, and some by
-both.  So just do all of them, and gitolite will combine all the access lists!
-Here's an example:
-
-    # define groups of people
-    @bosses     = phb1 phb2 phb3
-    @devs       = dev1 dev2 dev3
-    @interns    = int1 int2 int3
-
-    # define groups of projects
-    @open       = git gitolite linux rakudo
-    @closed     = c1 c2 c3
-    @topsecret  = ts1 ts2 ts3
-
-    # all bosses have read access to all projects
-    repo @open @closed @topsecret
-        R   =   @bosses
-
-    # everyone has read access to "open" projects
-    repo @open
-        R   =   @bosses @devs @interns
-
-    [...or any other combination you want...]
-
-    # later in the file:
-
-    # specify access for individual repos (like RW, RW+, etc)
-    repo c1
-        [...]
-
-    [...etc...]
-
-If you notice that `@bosses` are given read access to `@open` via both rules,
-do not worry that this causes some duplication or inefficiency.  It doesn't
-:-)
-
-See the "specify gitweb/daemon access" section below for one more example.
-
-<a name="one_user_many_keys"></a>
+<a name="_one_user_many_keys"></a>
 
 ##### one user, many keys
 
@@ -227,11 +147,11 @@ corresponding derived usernames (which is what goes into the
         sitaramc@gmail.com@laptop.pub           sitaramc@gmail.com
         sitaramc@gmail.com@desktop.pub          sitaramc@gmail.com
 
-<a name="security_access_control_and_auditing"></a>
+<a name="_security_access_control_and_auditing"></a>
 
 #### security, access control, and auditing
 
-<a name="two_levels_of_access_rights_checking"></a>
+<a name="_two_levels_of_access_rights_checking"></a>
 
 ##### two levels of access rights checking
 
@@ -267,7 +187,7 @@ any of the refexes match, the push succeeds.  If none of them match, it fails.
 Gitolite also allows "exclude" or "deny" rules.  See later in this document
 for details.
 
-<a name="better_logging"></a>
+<a name="_better_logging"></a>
 
 ##### better logging
 
@@ -295,142 +215,18 @@ The other parts of the log line are the name of the repo, the refname being
 updated, the user updating it, and the refex pattern (from the config file)
 that matched, in case you need to debug the config file itself.
 
-<a name="exclude_or_deny_rules"></a>
-
-##### "exclude" (or "deny") rules
-
-Here is an illustrative explanation of "deny" rules.  However, please be sure
-to read the "DENY/EXCLUDE RULES" section in `conf/example.conf` for important
-notes/caveats before using "deny" rules.
-
-Take a look at the following snippet, which *seems* to say that "bruce" can
-write versioned tags (anything containing `refs/tags/v[0-9]`), but the other
-staffers can't:
-
-        @staff = bruce whitfield martin
-                [... and later ...]
-        RW refs/tags/v[0-9]     = bruce
-        RW refs/tags            = @staff
-
-But that's not how the matching works.  As long as any refex matches the
-refname being updated, it's a "yes".  Since the second refex (which says
-"anything containing `refs/tags`") is a superset of the first one, it lets
-anyone on `@staff` create versioned tags, not just Bruce.
-
-One way to fix this is to allow "excludes" -- some changes in syntax, combined
-with a rigorous, ordered, interpretation would do it.
-
-Let's recap the **existing semantics**:
-
->   the first matching refex that has the permission you're looking for (`W`
->   or `+`), results in success.  A fallthrough results in failure
-
-Here are the **new semantics**, with changes from the "main" one in bold:
-
->   the first matching refex that has the permission you're looking for (`W`
->   or `+`) **or a minus (`-`)**, results in success **or failure,
->   respectively**.  A fallthrough **also** results in failure
-
-So the example we started with becomes, if you use "deny" rules:
-
-        RW refs/tags/v[0-9]     = bruce
-        -  refs/tags/v[0-9]     = @staff
-        RW refs/tags            = @staff
-
-And here's how it works:
-
-  * for non-version tags, only the 3rd rule matches, so anyone on staff can
-    push them
-  * for version tags by bruce, the first rule matches so he can push them
-  * for version tags by staffers *other than bruce*, the second rule matches
-    before the third one, and it has a `-` as the permission, so the push
-    fails
-
-<a name="separating_delete_and_rewind_rights"></a>
-
-##### separating delete and rewind rights
-
-Since the beginning, `RW+` meant being able to rewind *or* delete a ref.  My
-stand is that these two are fairly similar, and infact a rewind is almost the
-same as a delete+push (the only difference I can see is if you had
-core.logAllRefUpdates set, which is *not* a default setting).
-
-However, there seem to be cases where it is useful to distinguish them --
-situations where one of them should be restricted more than the other.
-([Arguments][sdrr] exist for both sides: restrict delete more than rewind, and
-vice versa).
-
-So we now allow these two rights to be separated.  Here's how:
-
-  * branch deletion is permitted by using `RWD` or `RW+D` -- essentially the
-    current branch permissions with a `D` suffixed
-  * if a repo has a rule containing such a `D`, all `RW+` permissions (for
-    that repo) cease to permit deletion of the ref matched.
-
-This provides the *greatest* backward compatibility, while also enabling the
-new semantics at the granularity of a repo, instead of the entire config.
-
-Note 1: if you find that `RW+` no longer allows deletion but you can't see a
-`D` permission in the rules, remember that gitolite allows a repo config to be
-specified in multiple places for convenience, included delegated or included
-files.  Be sure to search everywhere :)
-
-Note 2: a quick way to make this the default for *all* your repos is:
-
-    repo @all
-        RWD     dummy-branch    =   foo
-
-where foo can be either the administrator, or if you can ignore the warning
-message when you push, a non-existant user.
-
-Note 3: you can combine this with the "create a branch" permissions described
-in the next section, as the example line in conf/example.conf shows.
-
-[sdrr]: http://groups.google.com/group/gitolite/browse_thread/thread/9f2b4358ce406d4c#
-
-<a name="separating_create_and_push_rights"></a>
-
-##### separating create and push rights
-
-This feature is similar in spirit to the previous one, so please read that
-section for a general understanding.
-
-Briefly:
-
-  * branch creation is permitted by using `RWC` or `RW+C` -- essentially the
-    current branch permissions with a `C` suffixed
-  * if a repo has a rule containing such a `C`, then the `RW` and `RW+`
-    permissions (for that repo) no longer permit creation of the ref matched;
-    they will only allow pushing to an existing ref
-
-Note: you can combine this with the "delete a branch" permissions described in
-the previous section, as the example line in conf/example.conf shows.
-
-<a name="file_dir_NAME_based_restrictions"></a>
-
-##### file/dir NAME based restrictions
-
-In addition to branch-name based restrictions, gitolite also allows you to
-restrict what files or directories can be involved in changes being pushed.
-This basically uses `git diff --name-only` to obtain the list of files being
-changed, treating each filename as a "ref" to be matched.
-
-Please see `conf/example.conf` for syntax and examples.
-
-<a name="delegating_parts_of_the_config_file"></a>
+<a name="_delegating_parts_of_the_config_file"></a>
 
 ##### delegating parts of the config file
 
 You can now split up the config file and delegate the authority to specify
-access control for their own pieces.  See
-[doc/5-delegation.mkd](http://github.com/sitaramc/gitolite/blob/pu/doc/5-delegation.mkd)
-for details.
+access control for their own pieces.  See [delegation][] for details.
 
-<a name="convenience_features"></a>
+<a name="_convenience_features"></a>
 
 #### convenience features
 
-<a name="what_repos_do_I_have_access_to_"></a>
+<a name="_what_repos_do_I_have_access_to_"></a>
 
 ##### what repos do I have access to?
 
@@ -438,62 +234,10 @@ Sometimes there are too many repos, maybe even named similarly, or with the
 potential for typos, confusion about hyphens/underscores or upper/lower case,
 etc.  You'd just like a simple way to know what repos you have access to.
 
-Easy!  Just use ssh to give the "info" command to the gitolite server:
+Gitolite provides two commands (`info` and `expand`) to help you find this
+information; please check [doc/report-output.mkd][repout] for details.
 
-    $ ssh git@server info
-    hello sitaram, the gitolite version here is v1.4.2-4-g40cbecd
-    the gitolite config gives you the following access:
-        #R  W       SecureBrowse
-        #R  W       anu-wsd
-        #R  W       entrans
-        @R  W       git-notes
-        @R  W       gitolite
-        #R  W       gitolite-admin
-        #R  W       indic_web_input
-     @C #R          private/CREATOR/[\w.-]+
-        #R  W       proxy
-     @C @R  W       public/CREATOR/[\w.-]+
-        @R @W       testing
-        #R  W       vkc
-
-To understand what these symbols mean, please see doc/report-output.mkd.
-
-You can also pass an extra argument to subset the listing; it's treated as a
-regex pattern that can match anywhere in the reponame.
-
-In "big-config" mode (i.e., when `GL_BIG_CONFIG` is set) this argument is
-**mandatory**.  You can try and cheat the system by passing in a "." but
-gitolite truncates the output after 5 results to prevent a DOS.
-
-    $ ssh git@server info git
-    hello sitaram, the gitolite version here is v1.4.2-4-g40cbecd
-    the gitolite config gives you the following access:
-        @R  W       git-notes
-        @R  W       gitolite
-        #R  W       gitolite-admin
-
-    $ ssh git@server info admin
-    hello sitaram, the gitolite version here is v1.4.2-4-g40cbecd
-    the gitolite config gives you the following access:
-        #R  W       gitolite-admin
-
-The administrator can also say things like:
-
-    # if you installed using the "from-client" method
-    ssh gitolite info foo u1 u2 u3
-    # for the other 3 install methods
-    ssh git@server info foo u1 u2 u3
-
-to get this info for other user(s).  The "foo" is a partial reponame or a
-regex pattern; see above for details.
-
-<a name="including_config_lines_from_other_files"></a>
-
-##### including config lines from other files
-
-See the entry under "INCLUDE SOME OTHER FILE" in `conf/example.conf`.
-
-<a name="support_for_git_installed_outside_default_PATH"></a>
+<a name="_support_for_git_installed_outside_default_PATH"></a>
 
 ##### support for git installed outside default PATH
 
@@ -527,7 +271,7 @@ the full PATH in the rc file, like so:
 
     $ENV{PATH} = "/home/sitaram/bin:$ENV{PATH}";
 
-<a name="personal_branches"></a>
+<a name="_personal_branches"></a>
 
 ##### "personal" branches
 
@@ -551,15 +295,15 @@ important thing is that the "branch" name should contain `/USER/` (including
 the slashes).  At runtime this will match whoever is the current user.  Access
 is still determined by the right hand side of course.
 
-<a name="custom_hooks_and_custom_git_config"></a>
+<a name="_custom_hooks_and_custom_git_config"></a>
 
 ##### custom hooks and custom git config
 
 You can specify hooks that you want to propagate to all repos, as well as
 per-repo "gitconfig" settings.  Please see `doc/2-admin.mkd` and
-`conf/example.conf` for details.
+`doc/gitolite.conf.mkd` for details.
 
-<a name="bypassing_gitolite"></a>
+<a name="_bypassing_gitolite"></a>
 
 ##### bypassing gitolite
 
@@ -582,19 +326,50 @@ to set that variable permanently, preferring this mode instead:
 
     GL_BYPASS_UPDATE_HOOK=1 git push
 
-<a name="INconvenience_features"></a>
+**WARNING**: Do **NOT** try this with the special `gitolite-admin` repo.  That
+repo also runs a `post-update` hook which needs additional information which
+is NOT available if you bypass gitolite.  Mucking with that repo in this
+manner is strongly discouraged, as in "are you feeling lucky today?".  Use
+`gl-dont-panic` if you need to do some server-side surgery for that repo.
+
+<a name="_disabling_write_access_to_take_backups"></a>
+
+##### disabling write access to take backups
+
+If you want to take normal, OS-level, backups of the system, you might want
+git to be quiescent during that time, so that the backup is clean.  The best
+way to do this is to disable write-access to the server for the duration of
+the backup.
+
+Here's how:
+
+    cd $HOME    # if running as "git" user, else "cd ~git" or whatever
+    echo writes disabled during backup window > .gitolite.down
+
+    # << RUN YOUR BACKUP COMMAND(s) HERE >>
+
+    rm .gitolite.down
+
+I leave it to you to
+
+  * make sure that if the backup script fails, the `.gitolite.down` file is
+    still removed (or not; maybe your policy is that if the backup failed, no
+    further writes are allowed.  Whatever...)
+  * if you're extremely paranoid (even I wouldn't worry about this!) make sure
+    that no push is *in progress* by checking for any `git-receive-pack`
+    processes in a `ps` output.
+
+<a name="_INconvenience_features"></a>
 
 #### INconvenience features
 
-<a name="deleting_a_repo"></a>
+<a name="_deleting_a_repo"></a>
 
 ##### deleting a repo
 
 By design, there is no code in gitolite to *delete* a repo if the repo was
 specified by name in the config file.  (Wildcard repos *can* be deleted by the
 user; see [here][rmrepo] for details).
-
-[rmrepo]: http://github.com/sitaramc/gitolite/blob/pu/doc/admin-defined-commands.mkd#rmrepo
 
 If you *do* want to permanently delete a *non*-wildcard repo, here's what you
 do:
@@ -605,7 +380,21 @@ do:
   * *then* remove the repo from `~/repositories` on the server (or whatever
     you set `$GL_REPO_BASE` to in the `~/.gitolite.rc`)
 
-<a name="helping_with_gitweb"></a>
+<a name="_renaming_a_repo"></a>
+
+##### renaming a repo
+
+This is similar; there's no code to do this in gitolite.  What you do is:
+
+  * log on to the server, `cd $REPO_BASE` (default: `cd ~/repositories`), and
+    `mv old-name.git new-name.git`
+  * back on your gitolite-admin clone, edit `conf/gitolite.conf` and replace
+    all occurrences of `old-name` with `new-name`.  Then add, commit, and push
+    as usual.
+
+The order of these 2 steps is important; do not reverse them :-)
+
+<a name="_helping_with_gitweb"></a>
 
 #### helping with gitweb
 
@@ -613,56 +402,12 @@ Although gitweb is a completely separate program, gitolite can do quite a
 lot to help you manage gitweb access as well; once the initial setup is
 complete, you can do it all from within the gitolite config file!
 
-<a name="easier_to_specify_gitweb_description_and_gitweb_daemon_access"></a>
+If you just want gitweb to show some repositories, see [gwd] for how to
+specify which repos to show.  Other advanced uses are described here.
 
-##### easier to specify gitweb "description" and gitweb/daemon access
+[gwd]: http://sitaramc.github.com/gitolite/doc/2-admin.html#gwd
 
-To enable access to a repo via gitweb *and* create a "description" for it to
-show up on the webpage, just add a line like this, anywhere in the config
-file:
-
-    reponame = "one line of description"
-
-You can also specify an "owner":
-
-    reponame "owner name" = "one line of description"
-
-To enable access to one or more repos via git daemon, just give "read"
-permissions to the special username `daemon`.
-
-There is also a special user called `gitweb` to specify gitweb access; useful
-if you don't care about specifying individual descriptions for each repo and
-just want to quickly enable gitweb access to one or more repos.
-
-Remember gitolite lets you specify the access control specs in bits and
-pieces, so you can keep all the daemon/gitweb access in one place, even if
-each repo has more specific branch-level access config specified elsewhere.
-Here's an example, using really short reponames because I'm lazy:
-
-    # maybe near the top of the file, for ease of access:
-
-    @only_web       = r1 r2 r3
-    @only_daemon    = r4 r5 r6
-    @web_and_daemon = r7 r8 r9
-
-    repo @only_web
-        R   = gitweb
-    repo @only_daemon
-        R   = daemon
-    repo @web_and_daemon
-        R   = gitweb
-        R   = daemon
-
-    # ...maybe much later in the file:
-
-    repo r1
-        # normal developer access lists for r1 and its branches/tags in the
-        # usual way
-
-    repo r2
-    # ...and so on...
-
-<a name="easier_to_link_gitweb_authorisation_with_gitolite"></a>
+<a name="_easier_to_link_gitweb_authorisation_with_gitolite"></a>
 
 ##### easier to link gitweb authorisation with gitolite
 
@@ -698,24 +443,31 @@ Gitweb allows you to specify a subroutine to decide on access.  We use that
 feature and tie it to gitolite.  Configuration example can be found in
 `contrib/gitweb/`.
 
-<a name="advanced_features"></a>
+<a name="_umask_setting"></a>
+
+##### umask setting
+
+Gitweb not able to read your repos?  You can change the umask for newly
+created repos to something more relaxed -- see the `~/.gitolite.rc` file
+
+<a name="_advanced_features"></a>
 
 #### advanced features
 
-<a name="repos_named_with_wildcards"></a>
+<a name="_repos_named_with_wildcards"></a>
 
 ##### repos named with wildcards
 
-Please see `doc/4-wildcard-repositories.mkd` for all the details.
+Please see `doc/wildcard-repositories.mkd` for all the details.
 
-<a name="admin_defined_commands"></a>
+<a name="_admin_defined_commands"></a>
 
 ##### admin defined commands
 
 This requires the wildcards feature to be enabled, but is then an extremely
 powerful feature.  See `doc/admin-defined-commands.mkd`.
 
-<a name="access_control_for_external_commands"></a>
+<a name="_access_control_for_external_commands"></a>
 
 ##### access control for external commands
 
@@ -725,7 +477,7 @@ server-side command that contains enough information to make an access control
 decision.
 
 Note that this is incompatible with giving people shell access as described in
-`doc/6-ssh-troubleshooting.mkd` -- people who have shell access are not
+`doc/ssh-troubleshooting.mkd` -- people who have shell access are not
 subject to this mechanism (it wouldn't make sense to try and control someone
 who has shell access anyway).
 
@@ -739,7 +491,7 @@ Commands implemented so far are:
   * svnserve (see next section for a brief description; this has been
     contributed by Simon and Vladimir)
 
-<a name="svnserve"></a>
+<a name="_svnserve"></a>
 
 ###### svnserve
 
@@ -751,11 +503,11 @@ system. Assuming you installed gitolite to the same user as the one you used
 for SVN, SVN connectivity will be retained, and users will be able to use
 both SVN and git using the same SSH configuration.
 
-<a name="design_choices"></a>
+<a name="_design_choices"></a>
 
 ### design choices
 
-<a name="keeping_the_parser_and_the_access_control_separate"></a>
+<a name="_keeping_the_parser_and_the_access_control_separate"></a>
 
 #### keeping the parser and the access control separate
 
@@ -776,3 +528,7 @@ have to be first "compiled", and the access control programs use this
 If you choose the "easy install" method, all this is quite transparent to you
 anyway.  If you cannot use the easy install and must install manually, I have
 clear instructions on how to set it up.
+
+[repout]: http://sitaramc.github.com/gitolite/doc/report-output.html
+[delegation]: http://sitaramc.github.com/gitolite/doc/delegation.html
+[rmrepo]: http://sitaramc.github.com/gitolite/doc/admin-defined-commands.html#rmrepo
