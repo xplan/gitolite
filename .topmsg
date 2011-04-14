@@ -1,6 +1,9 @@
 From: Jiang Xin <jiangxin@ossxp.com>
 Subject: [PATCH] t/escape_dollar_in_doublequotes
 
-<patch description>
+If there is a dollar character (regex special char stands for string ending),
+in repos name, and there is a macro (such as $creator) in it, the repos name
+is quoted with double quotes. In this case, dollar character must be escaped.
+
 
 Signed-off-by: Jiang Xin <jiangxin@ossxp.com>
