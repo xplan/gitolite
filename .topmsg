@@ -1,0 +1,7 @@
+From: Jiang Xin <jiangxin@ossxp.com>
+Subject: [PATCH] t/wildrepo_detect
+
+Smart wildrepo name detect, or in some cases wildrepo
+may created automatically as normal repository.
+
+Signed-off-by: Jiang Xin <jiangxin@ossxp.com>
