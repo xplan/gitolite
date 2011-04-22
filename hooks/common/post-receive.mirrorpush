@@ -6,6 +6,13 @@
 
 if [ -n "$GL_SLAVES" ]
 then
+    if [ "$(git config --bool gitolite.mirror)" = "false" ]
+    then
+        echo "**************************************************" >&2
+        echo "WARNING: mirror disabled for this repository."      >&2
+        echo "**************************************************" >&2
+        exit 0
+    fi
     for mirror in $GL_SLAVES
     do
         if git push --mirror $mirror:$GL_REPO.git
@@ -15,8 +22,14 @@ then
             ssh $mirror mkdir -p $GL_REPO.git
             ssh $mirror git init --bare $GL_REPO.git
             ssh $mirror git config receive.fsckObjects true
-            git push --mirror $mirror:$GL_REPO.git ||
+            if git push --mirror $mirror:$GL_REPO.git
+            then
+                ::
+            else
+                echo "**************************************************"
                 echo "WARNING: mirror push to $mirror failed"
+                echo "**************************************************"
+            fi
         fi
     done
 fi >&2
