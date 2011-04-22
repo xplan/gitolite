@@ -1,0 +1,6 @@
+From: Jiang Xin <jiangxin@ossxp.com>
+Subject: [PATCH] t/mirror_switch
+
+Do not mirror repository if set gitolite.mirror to false.
+
+Signed-off-by: Jiang Xin <jiangxin@ossxp.com>
