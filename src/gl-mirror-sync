@@ -25,6 +25,15 @@ do
         continue
     fi
 
+    # mirror can be disabled by gitolite.mirror config variable
+    if [ "$(git config --bool gitolite.mirror)" = "false" ]
+    then
+        echo "**************************************************" >&2
+        echo "WARNING: mirror disabled for repository $r."        >&2
+        echo "**************************************************" >&2
+        continue
+    fi
+
     # this is essentially the same code as in the post-receive hook
     if git push --mirror $mirror:$r
     then
@@ -32,6 +41,7 @@ do
     else
         ssh $mirror mkdir -p $r
         ssh $mirror git init --bare $r
+        ssh $mirror "cd $r; git config receive.fsckObjects true"
         git push --mirror $mirror:$r ||
             echo "WARNING: mirror push to $mirror failed"
     fi < /dev/null

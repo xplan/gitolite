@@ -28,7 +28,7 @@ then
             ssh $mirror "cd $GL_REPO.git; git config receive.fsckObjects true"
             if git push --mirror $mirror:$GL_REPO.git
             then
-                ::
+                :
             else
                 echo "**************************************************"
                 echo "WARNING: mirror push to $mirror failed"
