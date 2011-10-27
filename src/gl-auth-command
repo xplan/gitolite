@@ -157,14 +157,13 @@ if ( $GL_ALL_READ_ALL and $verb =~ $R_COMMANDS and -d "$REPO_BASE/$repo.git") {
     ($perm, $creator, $wild) = repo_rights($repo);
 }
 # it was missing, and you have create perms, so create it
-# $perm =~ /C/, means repo not exist!
+# $perm =~ /C/, means repo does not exist!
 if ($perm =~ /C/) {
-    # when clone non-exist repo, do not create on-the-fly.
+    # create the non-exist repo, only when user run `git push` command, but not `git clone`.
     if ($verb =~ $W_COMMANDS) {
-        # it was missing, and you have create perms
-	new_wild_repo($repo, $user);
+        new_wild_repo($repo, $user);
     } else {
-        die "Repo $repo does not exist!\nBut since you have the create permission, you can PUSH to create the repository.\n"
+        die "Repo $repo does not exist!\nYou can create the repo using 'git push' command, if you have permissions.\n"
     }
 }
 
