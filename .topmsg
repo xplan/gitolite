@@ -1,0 +1,7 @@
+From: Jiang Xin <worldhello.net@gmail.com>
+Subject: [PATCH] Mirror to slave even target repo is missing.
+
+Add new return value 'missing' in function mirror_mode(),
+and mirror process not failed if slaves report repo missing.
+
+Signed-off-by: Jiang Xin <worldhello.net@gmail.com>
