@@ -21,7 +21,7 @@
 
 slaves=`git config --get gitolite.mirror.slaves`
 [ -z "$slaves" ] && exit 0
-if [ "$(git config --bool gitolite.mirror)" = "false" ]
+if [ "$(git config --bool gitolite.mirror.disabled)" = "true" ]
 then
     echo "**************************************************"
     echo "WARNING: mirror disabled for this repository."
