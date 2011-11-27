@@ -1,5 +1,7 @@
 #!/bin/sh
 
+GL_REPO_TRASH_DIR=repo-waiting-for-delete
+
 . $(dirname $0)/adc.common-functions
 
 [ -z "$GL_RC" ] && die "ENV GL_RC not set"
@@ -30,7 +32,9 @@ opt $ARE_YOU_SURE && {
     [ $s = "yes" ] || die aborting...
 }
 
-rm -rf $repo.git
+targetdir=../$GL_REPO_TRASH_DIR/$repo.git-`date +"%s"`
+mkdir -p `dirname $targetdir`
+mv $repo.git $targetdir
 echo "$repo is now GONE!"
 
 # gitweb specific; code for cgit users left as an exercise for the reader
