@@ -21,4 +21,11 @@
 
 slaves=`git config --get gitolite.mirror.slaves`
 [ -z "$slaves" ] && exit 0
+if [ "$(git config --bool gitolite.mirror.disabled)" = "true" ]
+then
+    echo "**************************************************"
+    echo "WARNING: mirror disabled for this repository."
+    echo "**************************************************"
+    exit 0
+fi >&2
 $GL_BINDIR/gl-mirror-push $GL_REPO $slaves
