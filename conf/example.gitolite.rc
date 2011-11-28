@@ -83,6 +83,10 @@ $GL_LOGT="$GL_ADMINDIR/logs/gitolite-%y-%m.log";
 $REPO_BASE="repositories";
 
 # ------------------------------------------------------------------------------
+# set to 1, clone will not create new repo.
+$GL_REPO_CREATE_BY_CLONE = 0;
+
+# ------------------------------------------------------------------------------
 # DO NOT TOUCH ANY THING AFTER THIS LINE
 # ------------------------------------------------------------------------------
 

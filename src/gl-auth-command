@@ -163,7 +163,7 @@ if ( $GL_ALL_READ_ALL and $verb =~ $R_COMMANDS and -d "$REPO_BASE/$repo.git") {
 # $perm =~ /C/, means repo does not exist!
 if ($perm =~ /C/) {
     # create the non-exist repo, only when user run `git push` command, but not `git clone`.
-    if ($verb =~ $W_COMMANDS) {
+    if ($verb =~ $W_COMMANDS or $GL_REPO_CREATE_BY_CLONE) {
         new_wild_repo($repo, $user);
     } else {
         die "Repo $repo does not exist!\nYou can create the repo using 'git push' command, if you have permissions.\n"
